@@ -27,6 +27,15 @@ public class King {
     /** The command that marks a task as not done, followed by the task's 1-based index. */
     private static final String UNMARK_COMMAND = "unmark";
 
+    /** The command to add a ToDo task, followed by the task description. */
+    private static final String TODO_COMMAND = "todo";
+
+    /** The command to add a Deadline task, followed by the task description and /by clause. */
+    private static final String DEADLINE_COMMAND = "deadline";
+
+    /** The command to add an Event task, followed by the task description and /from and /to clauses. */
+    private static final String EVENT_COMMAND = "event";
+
     /** Maximum number of tasks King can store (the spec caps it at 100). */
     private static final int MAX_TASKS = 100;
 
@@ -72,11 +81,35 @@ public class King {
                 // Toggle the done state of the task at the given index.
                 updateTaskStatus(tasks, taskCount, command,
                         firstWord.equalsIgnoreCase(MARK_COMMAND));
+            } else if (firstWord.equalsIgnoreCase(TODO_COMMAND)) {
+                // Add a ToDo task.
+                String description = command.substring(TODO_COMMAND.length()).trim();
+                if (description.isEmpty()) {
+                    System.out.println("    Oops, the description of a todo cannot be empty.");
+                } else {
+                    tasks[taskCount] = new ToDo(description);
+                    printAddedTask(tasks[taskCount]);
+                    taskCount++;
+                    System.out.println("    Now you have " + taskCount + " task(s) in the list.");
+                }
+            } else if (firstWord.equalsIgnoreCase(DEADLINE_COMMAND)) {
+                // Add a Deadline task.
+                addDeadline(tasks, taskCount, command);
+                if (taskCount < MAX_TASKS && tasks[taskCount] != null) {
+                    taskCount++;
+                }
+            } else if (firstWord.equalsIgnoreCase(EVENT_COMMAND)) {
+                // Add an Event task.
+                addEvent(tasks, taskCount, command);
+                if (taskCount < MAX_TASKS && tasks[taskCount] != null) {
+                    taskCount++;
+                }
             } else {
                 // Treat any other text as a new task to store.
-                tasks[taskCount] = new Task(command);
+                tasks[taskCount] = new ToDo(command);
+                printAddedTask(tasks[taskCount]);
                 taskCount++;
-                System.out.println("    added: " + command);
+                System.out.println("    Now you have " + taskCount + " task(s) in the list.");
             }
             System.out.println(LINE);
         }
@@ -85,7 +118,8 @@ public class King {
 
     /**
      * Prints all stored tasks as a numbered list, indented to match the chat frame.
-     * Each task is shown with a done-state icon: {@code [X]} if done, {@code [ ]} if not.
+     * Each task is shown with a task-type icon ([T]/[D]/[E]), a done-state icon
+     * ({@code [X]} if done, {@code [ ]} if not), and its description.
      *
      * @param tasks     the array holding the stored tasks.
      * @param taskCount how many of the tasks in the array are in use.
@@ -93,9 +127,21 @@ public class King {
     private static void printTasks(Task[] tasks, int taskCount) {
         System.out.println("    Here are the tasks in your list:");
         for (int i = 0; i < taskCount; i++) {
-            System.out.printf("    %d. [%s] %s%n", i + 1,
-                    tasks[i].getStatusIcon(), tasks[i].getDescription());
+                printTask(i + 1, tasks[i]);
         }
+    }
+
+    /**
+     * Prints a task with its type, done state, and description.
+     * The type, icon, and description are all resolved through the task's
+     * own methods, so subclasses of {@link Task} control their own display.
+     */
+    private static void printTask(int index, Task task) {
+        if (index > 0) {
+            System.out.printf("    %d. ", index);
+        }
+        System.out.printf("[%s][%s] %s%n", task.getTaskType(), task.getStatusIcon(),
+                task.getDescription());
     }
 
     /**
@@ -121,15 +167,92 @@ public class King {
             System.out.println("    Oops! There is no task with that number in your list.");
             return;
         }
-        Task task = tasks[index - 1];
         if (markAsDone) {
-            task.markAsDone();
+            tasks[index - 1].markAsDone();
             System.out.println("    Nice! I've marked this task as done:");
         } else {
-            task.markAsNotDone();
+            tasks[index - 1].markAsNotDone();
             System.out.println("    OK, I've marked this task as not done yet:");
         }
-        System.out.printf("      [%s] %s%n", task.getStatusIcon(), task.getDescription());
+        System.out.print("      ");
+        printTask(0, tasks[index - 1]);
+    }
+
+    /**
+     * Prints a task in the format: {@code [type][status] description}.
+     *
+     * @param task the task to print.
+     */
+    private static void printAddedTask(Task task) {
+        System.out.println("    Got it. I've added this task:");
+        System.out.print("      ");
+        printTask(0, task);
+    }
+
+    /**
+     * Parses and adds a Deadline task to the task list.
+     * Expected format: {@code deadline <description> /by <deadline>}
+     *
+     * @param tasks     the array holding the stored tasks.
+     * @param taskCount how many of the tasks in the array are in use.
+     * @param command   the full command typed by the user.
+     */
+    private static void addDeadline(Task[] tasks, int taskCount, String command) {
+        String content = command.substring(DEADLINE_COMMAND.length()).trim();
+        String[] parts = content.split(" /by ");
+        if (parts.length < 2) {
+            System.out.println("    Oops, the format should be: deadline <description> /by <date/time>");
+            return;
+        }
+        String description = parts[0].trim();
+        String by = parts[1].trim();
+        if (description.isEmpty() || by.isEmpty()) {
+            System.out.println("    Oops, the description or deadline cannot be empty.");
+            return;
+        }
+        if (taskCount >= MAX_TASKS) {
+            System.out.println("    Oops, the task list is full.");
+            return;
+        }
+        tasks[taskCount] = new Deadline(description, by);
+        printAddedTask(tasks[taskCount]);
+        System.out.println("    Now you have " + (taskCount + 1) + " task(s) in the list.");
+    }
+
+    /**
+     * Parses and adds an Event task to the task list.
+     * Expected format: {@code event <description> /from <start> /to <end>}
+     *
+     * @param tasks     the array holding the stored tasks.
+     * @param taskCount how many of the tasks in the array are in use.
+     * @param command   the full command typed by the user.
+     */
+    private static void addEvent(Task[] tasks, int taskCount, String command) {
+        String content = command.substring(EVENT_COMMAND.length()).trim();
+        String[] parts = content.split(" /from ");
+        if (parts.length < 2) {
+            System.out.println("    Oops, the format should be: event <description> /from <start> /to <end>");
+            return;
+        }
+        String description = parts[0].trim();
+        String[] timeParts = parts[1].split(" /to ");
+        if (timeParts.length < 2) {
+            System.out.println("    Oops, the format should be: event <description> /from <start> /to <end>");
+            return;
+        }
+        String from = timeParts[0].trim();
+        String to = timeParts[1].trim();
+        if (description.isEmpty() || from.isEmpty() || to.isEmpty()) {
+            System.out.println("    Oops, the description, start time, or end time cannot be empty.");
+            return;
+        }
+        if (taskCount >= MAX_TASKS) {
+            System.out.println("    Oops, the task list is full.");
+            return;
+        }
+        tasks[taskCount] = new Event(description, from, to);
+        printAddedTask(tasks[taskCount]);
+        System.out.println("    Now you have " + (taskCount + 1) + " task(s) in the list.");
     }
 
     /**
