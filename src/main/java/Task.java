@@ -17,7 +17,7 @@ public class Task {
     /**
      * Creates a new task with the given description, initially marked as not done.
      *
-     * @param description the text of the task
+     * @param description the text of the task.
      */
     public Task(String description) {
         this.description = description;

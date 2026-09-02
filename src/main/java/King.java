@@ -30,6 +30,9 @@ public class King {
     /** Maximum number of tasks King can store (the spec caps it at 100). */
     private static final int MAX_TASKS = 100;
 
+    /**
+     * Runs the King chatbot, reading commands until {@code bye} is typed.
+     */
     public static void main(String[] args) {
         String banner = "    __    _          \n"
                 + "   / /__ (_)__  ___ _\n"
@@ -84,8 +87,8 @@ public class King {
      * Prints all stored tasks as a numbered list, indented to match the chat frame.
      * Each task is shown with a done-state icon: {@code [X]} if done, {@code [ ]} if not.
      *
-     * @param tasks     the array holding the stored tasks
-     * @param taskCount how many of the tasks in the array are in use
+     * @param tasks     the array holding the stored tasks.
+     * @param taskCount how many of the tasks in the array are in use.
      */
     private static void printTasks(Task[] tasks, int taskCount) {
         System.out.println("    Here are the tasks in your list:");
@@ -100,13 +103,13 @@ public class King {
      * confirmation. The command is expected to look like {@code "mark 2"} or
      * {@code "unmark 2"}: anything after the first word is the 1-based index.
      *
-     * @param tasks      the array holding the stored tasks
-     * @param taskCount  how many of the tasks in the array are in use
-     * @param command    the full command typed by the user, e.g. "mark 2"
-     * @param markAsDone true to mark the task done, false to mark it not done
+     * @param tasks      the array holding the stored tasks.
+     * @param taskCount  how many of the tasks in the array are in use.
+     * @param command    the full command typed by the user, e.g. "mark 2".
+     * @param markAsDone true to mark the task done, false to mark it not done.
      */
     private static void updateTaskStatus(Task[] tasks, int taskCount, String command,
-                                         boolean markAsDone) {
+            boolean markAsDone) {
         String[] parts = command.split(" ", 2);
         String indexText = parts.length > 1 ? parts[1].trim() : "";
         if (!isNumber(indexText)) {
@@ -133,8 +136,8 @@ public class King {
      * Checks whether the given text is a non-empty string of digits,
      * i.e. a usable task index.
      *
-     * @param text the text to check
-     * @return true if the text consists solely of digits
+     * @param text the text to check.
+     * @return true if the text consists solely of digits.
      */
     private static boolean isNumber(String text) {
         if (text.isEmpty()) {
