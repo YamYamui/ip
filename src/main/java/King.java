@@ -52,7 +52,7 @@ public class King {
         // Storage for the tasks the user adds. The spec guarantees there will
         // never be more than 100, so a fixed-size array is enough.
         // taskCount tracks how many slots of the array are actually in use.
-        Object[] tasks = new Object[MAX_TASKS];
+        Task[] tasks = new Task[MAX_TASKS];
         int taskCount = 0;
 
         // Greet the user in King's regal tone.
@@ -124,60 +124,24 @@ public class King {
      * @param tasks     the array holding the stored tasks.
      * @param taskCount how many of the tasks in the array are in use.
      */
-    private static void printTasks(Object[] tasks, int taskCount) {
+    private static void printTasks(Task[] tasks, int taskCount) {
         System.out.println("    Here are the tasks in your list:");
         for (int i = 0; i < taskCount; i++) {
                 printTask(i + 1, tasks[i]);
         }
     }
 
-    /** Prints a task with its type, done state, and description. */
-    private static void printTask(int index, Object task) {
-        String taskType;
-        String statusIcon;
-        String description;
-        if (task instanceof ToDo) {
-            ToDo todo = (ToDo) task;
-            taskType = "T";
-            statusIcon = todo.getStatusIcon();
-            description = todo.getDescription();
-        } else if (task instanceof Deadline) {
-            Deadline deadline = (Deadline) task;
-            taskType = "D";
-            statusIcon = deadline.getStatusIcon();
-            description = deadline.getDescription();
-        } else {
-            Event event = (Event) task;
-            taskType = "E";
-            statusIcon = event.getStatusIcon();
-            description = event.getDescription();
-        }
+    /**
+     * Prints a task with its type, done state, and description.
+     * The type, icon, and description are all resolved through the task's
+     * own methods, so subclasses of {@link Task} control their own display.
+     */
+    private static void printTask(int index, Task task) {
         if (index > 0) {
             System.out.printf("    %d. ", index);
         }
-        System.out.printf("[%s][%s] %s%n", taskType, statusIcon, description);
-    }
-
-    /** Marks a standalone task as done. */
-    private static void markTaskAsDone(Object task) {
-        if (task instanceof ToDo) {
-            ((ToDo) task).markAsDone();
-        } else if (task instanceof Deadline) {
-            ((Deadline) task).markAsDone();
-        } else {
-            ((Event) task).markAsDone();
-        }
-    }
-
-    /** Marks a standalone task as not done. */
-    private static void markTaskAsNotDone(Object task) {
-        if (task instanceof ToDo) {
-            ((ToDo) task).markAsNotDone();
-        } else if (task instanceof Deadline) {
-            ((Deadline) task).markAsNotDone();
-        } else {
-            ((Event) task).markAsNotDone();
-        }
+        System.out.printf("[%s][%s] %s%n", task.getTaskType(), task.getStatusIcon(),
+                task.getDescription());
     }
 
     /**
@@ -190,7 +154,7 @@ public class King {
      * @param command    the full command typed by the user, e.g. "mark 2".
      * @param markAsDone true to mark the task done, false to mark it not done.
      */
-    private static void updateTaskStatus(Object[] tasks, int taskCount, String command,
+    private static void updateTaskStatus(Task[] tasks, int taskCount, String command,
             boolean markAsDone) {
         String[] parts = command.split(" ", 2);
         String indexText = parts.length > 1 ? parts[1].trim() : "";
@@ -204,10 +168,10 @@ public class King {
             return;
         }
         if (markAsDone) {
-            markTaskAsDone(tasks[index - 1]);
+            tasks[index - 1].markAsDone();
             System.out.println("    Nice! I've marked this task as done:");
         } else {
-            markTaskAsNotDone(tasks[index - 1]);
+            tasks[index - 1].markAsNotDone();
             System.out.println("    OK, I've marked this task as not done yet:");
         }
         System.out.print("      ");
@@ -219,7 +183,7 @@ public class King {
      *
      * @param task the task to print.
      */
-    private static void printAddedTask(Object task) {
+    private static void printAddedTask(Task task) {
         System.out.println("    Got it. I've added this task:");
         System.out.print("      ");
         printTask(0, task);
@@ -233,7 +197,7 @@ public class King {
      * @param taskCount how many of the tasks in the array are in use.
      * @param command   the full command typed by the user.
      */
-    private static void addDeadline(Object[] tasks, int taskCount, String command) {
+    private static void addDeadline(Task[] tasks, int taskCount, String command) {
         String content = command.substring(DEADLINE_COMMAND.length()).trim();
         String[] parts = content.split(" /by ");
         if (parts.length < 2) {
@@ -263,7 +227,7 @@ public class King {
      * @param taskCount how many of the tasks in the array are in use.
      * @param command   the full command typed by the user.
      */
-    private static void addEvent(Object[] tasks, int taskCount, String command) {
+    private static void addEvent(Task[] tasks, int taskCount, String command) {
         String content = command.substring(EVENT_COMMAND.length()).trim();
         String[] parts = content.split(" /from ");
         if (parts.length < 2) {
