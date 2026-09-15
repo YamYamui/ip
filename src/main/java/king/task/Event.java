@@ -1,3 +1,5 @@
+package king.task;
+
 /**
  * Represents an event that occurs over a time period.
  *

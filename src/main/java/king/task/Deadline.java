@@ -1,3 +1,5 @@
+package king.task;
+
 /**
  * Represents a task with a deadline.
  *

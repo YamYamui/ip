@@ -1,3 +1,5 @@
+package king.task;
+
 /**
  * Represents a single task in the King chatbot's list.
  *

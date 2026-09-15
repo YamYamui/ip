@@ -1,3 +1,5 @@
+package king.task;
+
 /**
  * Represents a todo task with no associated date or deadline.
  *
