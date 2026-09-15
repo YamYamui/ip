@@ -52,4 +52,14 @@ public class Task {
     public String getDescription() {
         return description;
     }
+
+    /**
+     * Returns a single character representing the task type.
+     * Subclasses should override this method to return their specific type.
+     *
+     * @return the task type character (e.g., "T", "D", "E").
+     */
+    public String getTaskType() {
+        return "T"; // default task type
+    }
 }
