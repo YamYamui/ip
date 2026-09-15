@@ -27,8 +27,9 @@ repository root in PowerShell:
 
 ```powershell
 New-Item -ItemType Directory -Force target/level-5-tests | Out-Null
-javac -d target/level-5-tests src/main/java/*.java src/test/java/KingTest.java
-java -cp target/level-5-tests KingTest
+$javaSources = @(Get-ChildItem -Path src/main/java, src/test/java -Recurse -Filter *.java | ForEach-Object { $_.FullName })
+javac -d target/level-5-tests $javaSources
+java -cp target/level-5-tests king.KingTest
 ```
 
 The tests use Java's standard library and throw `AssertionError` on failure;
