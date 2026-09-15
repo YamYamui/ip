@@ -1,4 +1,12 @@
+package king;
+
 import java.util.Scanner;
+
+import king.exception.KingException;
+import king.task.Deadline;
+import king.task.Event;
+import king.task.Task;
+import king.task.ToDo;
 
 /**
  * Runs the King chatbot, which stores todos, deadlines, and events.

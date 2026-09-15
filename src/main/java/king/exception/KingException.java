@@ -1,3 +1,5 @@
+package king.exception;
+
 /**
  * Represents an invalid King command that can be corrected by the user.
  * The message explains the problem and how to continue the conversation.
