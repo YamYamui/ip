@@ -1,5 +1,7 @@
 package king;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import king.exception.KingException;
@@ -18,9 +20,6 @@ public class King {
     /** Line of underscores used to frame the chatbot's messages. */
     private static final String LINE = "____________________________________________________________\n";
 
-    /** Maximum number of tasks King can store. */
-    private static final int MAX_TASKS = 100;
-
     /** Expected syntax for a deadline command. */
     private static final String USAGE_DEADLINE = "deadline <description> /by <date/time>";
 
@@ -37,8 +36,7 @@ public class King {
                 + "  /  '_// / _ \\/ _ `/\n"
                 + " /_/\\_\\/_/_//_/\\_, / \n"
                 + "              /___/\n";
-        Task[] tasks = new Task[MAX_TASKS];
-        int taskCount = 0;
+        List<Task> tasks = new ArrayList<>();
 
         System.out.println(LINE);
         System.out.print(banner);
@@ -63,17 +61,15 @@ public class King {
                         break;
                     } else if (firstWord.equalsIgnoreCase("list")) {
                         requireNoArguments(arguments, "list");
-                        printTasks(tasks, taskCount);
+                        printTasks(tasks);
                     } else if (firstWord.equalsIgnoreCase("mark") || firstWord.equalsIgnoreCase("unmark")) {
-                        updateTaskStatus(tasks, taskCount, arguments, firstWord.equalsIgnoreCase("mark"));
+                        updateTaskStatus(tasks, arguments, firstWord.equalsIgnoreCase("mark"));
+                    } else if (firstWord.equalsIgnoreCase("delete")) {
+                        deleteTask(tasks, arguments);
                     } else {
                         Task task = parseTask(firstWord, arguments);
-                        if (taskCount >= MAX_TASKS) {
-                            throw new KingException("your list is full (100 tasks). I cannot add another task.");
-                        }
-                        tasks[taskCount] = task;
-                        taskCount++;
-                        printAddedTask(task, taskCount);
+                        tasks.add(task);
+                        printAddedTask(task, tasks.size());
                     }
                 } catch (KingException exception) {
                     System.out.println("    My subject, " + exception.getMessage());
@@ -108,7 +104,7 @@ public class King {
             return new Event(parts[0], times[0], times[1]);
         }
         throw new KingException("I do not recognize '" + command
-                + "'. Use todo, deadline, event, list, mark, unmark, or bye.");
+                + "'. Use todo, deadline, event, list, mark, unmark, delete, or bye.");
     }
 
     /**
@@ -152,10 +148,10 @@ public class King {
     /**
      * Prints all stored tasks as a numbered list.
      */
-    private static void printTasks(Task[] tasks, int taskCount) {
+    private static void printTasks(List<Task> tasks) {
         System.out.println("    Here are the tasks in your list:");
-        for (int i = 0; i < taskCount; i++) {
-            printTask(i + 1, tasks[i]);
+        for (int i = 0; i < tasks.size(); i++) {
+            printTask(i + 1, tasks.get(i));
         }
     }
 
@@ -171,23 +167,17 @@ public class King {
     }
 
     /**
-     * Updates a task's completion status after validating its one-based index.
+     * Returns the zero-based index of an existing task from a user-supplied number.
      *
-     * @param tasks The array holding the stored tasks.
-     * @param taskCount The number of occupied slots in the array.
-     * @param indexText The task number supplied by the user.
-     * @param isDone Whether to mark the task as done.
-     * @throws KingException If the index is missing, nonnumeric, too large, or out of range.
+     * @throws KingException If the number is missing, nonnumeric, or out of range.
      */
-    private static void updateTaskStatus(Task[] tasks, int taskCount, String indexText, boolean isDone)
-            throws KingException {
-        requireText(indexText, "please supply a task number. Try: mark 1 or unmark 1");
+    private static int parseTaskIndex(String indexText, int taskCount) throws KingException {
+        requireText(indexText, "please supply a task number. Try: mark 1, unmark 1, or delete 1");
         int index;
         try {
             index = Integer.parseInt(indexText);
         } catch (NumberFormatException exception) {
-            throw new KingException("a task number must be a whole number from 1 to "
-                    + MAX_TASKS + ". Try: mark 1 or unmark 1");
+            throw new KingException("a task number must be a whole number. Use list to see valid numbers.");
         }
         if (taskCount == 0) {
             throw new KingException("your list is empty. Add a task first, for example: todo read a book");
@@ -196,15 +186,38 @@ public class King {
             throw new KingException("there is no task " + index + ". Choose a number from 1 to "
                     + taskCount + "; use list to see your tasks.");
         }
+        return index - 1;
+    }
+
+    /**
+     * Updates an existing task's completion status and prints a confirmation.
+     *
+     * @throws KingException If the task number is invalid.
+     */
+    private static void updateTaskStatus(List<Task> tasks, String indexText, boolean isDone) throws KingException {
+        Task task = tasks.get(parseTaskIndex(indexText, tasks.size()));
         if (isDone) {
-            tasks[index - 1].markAsDone();
+            task.markAsDone();
             System.out.println("    Nice! I've marked this task as done:");
         } else {
-            tasks[index - 1].markAsNotDone();
+            task.markAsNotDone();
             System.out.println("    OK, I've marked this task as not done yet:");
         }
         System.out.print("      ");
-        printTask(0, tasks[index - 1]);
+        printTask(0, task);
+    }
+
+    /**
+     * Removes an existing task, closes the gap in the list, and reports the new count.
+     *
+     * @throws KingException If the task number is invalid.
+     */
+    private static void deleteTask(List<Task> tasks, String indexText) throws KingException {
+        Task removedTask = tasks.remove(parseTaskIndex(indexText, tasks.size()));
+        System.out.println("    By your command, I've removed this task:");
+        System.out.print("      ");
+        printTask(0, removedTask);
+        System.out.println("    Now you have " + tasks.size() + " task(s) in the list.");
     }
 
     /**

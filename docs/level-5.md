@@ -18,7 +18,8 @@ from surrounding fields by whitespace. Dates and times remain free-form text.
 King explains empty descriptions, missing times, missing or repeated clause
 markers, reversed event clauses, unknown or blank commands, extra arguments to
 `list` and `bye`, and invalid task numbers. It also rejects additions once the
-list reaches 100 tasks. End-of-input exits cleanly even without `bye`.
+list reaches 100 tasks at Level-5. Level-6 replaces this fixed limit with a
+dynamic collection and adds [deletion](level-6.md). End-of-input exits cleanly even without `bye`.
 
 ## Run the regression tests
 
