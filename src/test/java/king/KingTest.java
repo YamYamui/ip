@@ -20,10 +20,12 @@ public class KingTest {
         event_invalidFields_rejectsTask();
         taskStatus_invalidIndex_preservesState();
         commands_validInput_preservesLevelFourBehavior();
-        taskList_full_rejectsAllTaskTypes();
+        taskList_overOneHundred_growsDynamically();
+        delete_validIndices_removesAndRenumbersTasks();
+        delete_invalidIndices_preservesTasks();
         input_endOfStream_exitsCleanly();
         bye_validCommand_stopsReading();
-        System.out.println("All 8 King regression tests passed.");
+        System.out.println("All 10 King regression tests passed.");
     }
 
     private static void commands_invalidInput_recoversWithoutAddingTasks() {
@@ -102,7 +104,7 @@ public class KingTest {
         assertOccurrences(output, "I've added this task", 4);
     }
 
-    private static void taskList_full_rejectsAllTaskTypes() {
+    private static void taskList_overOneHundred_growsDynamically() {
         StringBuilder commands = new StringBuilder();
         for (int i = 1; i <= 100; i++) {
             commands.append("todo task ").append(i).append('\n');
@@ -110,12 +112,31 @@ public class KingTest {
         commands.append("todo overflow\ndeadline overflow /by Friday\n"
                 + "event overflow /from Monday /to Tuesday\nblah\nmark 100\nlist\nbye\n");
         String output = runConversation(commands.toString());
-        assertOccurrences(output, "I've added this task", 100);
-        assertOccurrences(output, "your list is full", 3);
-        assertOccurrences(output, "My subject,", 4);
+        assertOccurrences(output, "I've added this task", 103);
+        assertOccurrences(output, "My subject,", 1);
         assertContains(output, "100. [T][X] task 100");
-        assertOccurrences(output, "101 task(s)", 0);
+        assertContains(output, "103. [E][ ] overflow (from: Monday to: Tuesday)");
         assertContains(output, "Bye. Hope to see you again soon!");
+    }
+
+    private static void delete_validIndices_removesAndRenumbersTasks() {
+        String output = runConversation("todo first\ndeadline middle /by Friday\n"
+                + "event last /from noon /to night\nmark 2\ndelete 2\nlist\n"
+                + "delete 2\nDELETE\t1\nlist\ntodo new\nlist\nbye\n");
+        assertOccurrences(output, "My subject,", 0);
+        assertOccurrences(output, "I've removed this task", 3);
+        assertContains(output, "[D][X] middle (by: Friday)");
+        assertContains(output, "2. [E][ ] last (from: noon to: night)");
+        assertContains(output, "Now you have 0 task(s)");
+        assertContains(output, "1. [T][ ] new");
+    }
+
+    private static void delete_invalidIndices_preservesTasks() {
+        String output = runConversation("delete 1\ntodo safe\ndelete\ndelete abc\ndelete 1.5\n"
+                + "delete 0\ndelete -1\ndelete 2\ndelete 999999999999999999\ndelete 1 2\nlist\nbye\n");
+        assertOccurrences(output, "My subject,", 9);
+        assertOccurrences(output, "I've removed this task", 0);
+        assertContains(output, "1. [T][ ] safe");
     }
 
     private static void input_endOfStream_exitsCleanly() {
