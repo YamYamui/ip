@@ -29,6 +29,7 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
 - `king`: the chatbot entry point, `King`.
 - `king.task`: `Task` and its `ToDo`, `Deadline`, and `Event` subclasses.
 - `king.exception`: the recoverable command error, `KingException`.
+- `king.storage`: saving and loading task data through `Storage`.
 
 Packages group related classes under the project name. Their folders sit beneath
 `src/main/java`, which remains the source root. Regression tests mirror the
@@ -47,3 +48,7 @@ java -cp target/classes king.King
 
 Use the fully qualified class name `king.King` when launching the application.
 See [Level-5 regression tests](docs/level-5.md#run-the-regression-tests) for test commands.
+
+King saves tasks automatically to `data/king.txt` and restores them on startup.
+See [Level-7 storage](docs/level-7.md) for the file format, error handling, and
+persistence test commands.

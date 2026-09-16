@@ -29,6 +29,14 @@ public class Event extends Task {
         this.to = to;
     }
 
+    public String getFrom() {
+        return from;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
     /**
      * Returns the description of this event followed by its time range,
      * e.g. {@code project meeting (from: Aug 6th 2pm to: 4pm)}.

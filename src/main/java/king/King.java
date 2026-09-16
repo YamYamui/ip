@@ -1,10 +1,12 @@
 package king;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import king.exception.KingException;
+import king.storage.Storage;
 import king.task.Deadline;
 import king.task.Event;
 import king.task.Task;
@@ -31,12 +33,29 @@ public class King {
      * Reports command errors without ending the conversation.
      */
     public static void main(String[] args) {
+        run(Path.of("data", "king.txt"));
+    }
+
+    /**
+     * Runs a session using the supplied save path, allowing tests to use isolated files.
+     * Stops on load failure to avoid overwriting data that could not be recovered.
+     */
+    public static void run(Path filePath) {
         String banner = "    __    _          \n"
                 + "   / /__ (_)__  ___ _\n"
                 + "  /  '_// / _ \\/ _ `/\n"
                 + " /_/\\_\\/_/_//_/\\_, / \n"
                 + "              /___/\n";
-        List<Task> tasks = new ArrayList<>();
+        List<Task> tasks;
+        Storage storage = new Storage(filePath);
+        try {
+            tasks = new ArrayList<>(storage.load());
+        } catch (KingException exception) {
+            System.out.println(LINE);
+            System.out.println("    My subject, " + exception.getMessage());
+            System.out.println(LINE);
+            return;
+        }
 
         System.out.println(LINE);
         System.out.print(banner);
@@ -64,12 +83,15 @@ public class King {
                         printTasks(tasks);
                     } else if (firstWord.equalsIgnoreCase("mark") || firstWord.equalsIgnoreCase("unmark")) {
                         updateTaskStatus(tasks, arguments, firstWord.equalsIgnoreCase("mark"));
+                        storage.save(tasks);
                     } else if (firstWord.equalsIgnoreCase("delete")) {
                         deleteTask(tasks, arguments);
+                        storage.save(tasks);
                     } else {
                         Task task = parseTask(firstWord, arguments);
                         tasks.add(task);
                         printAddedTask(task, tasks.size());
+                        storage.save(tasks);
                     }
                 } catch (KingException exception) {
                     System.out.println("    My subject, " + exception.getMessage());

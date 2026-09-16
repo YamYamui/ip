@@ -56,6 +56,17 @@ public class Task {
     }
 
     /**
+     * Returns the original description without display-only date or time suffixes.
+     */
+    public String getRawDescription() {
+        return description;
+    }
+
+    public boolean isDone() {
+        return isDone;
+    }
+
+    /**
      * Returns a single character representing the task type.
      * Subclasses should override this method to return their specific type.
      *
