@@ -2,6 +2,13 @@
 
 This is a project template for a greenfield Java project. Given below are instructions on how to use it.
 
+## Run the executable JAR
+
+Download `King.jar` from [GitHub releases](https://github.com/YamYamui/ip/releases).
+With Java 25 installed, copy it into an empty folder, open a terminal there,
+and run `java -jar "King.jar"`.
+See [A-Jar instructions](docs/a-jar.md) for building and distributing the JAR.
+
 ## Setting up in Intellij
 
 Prerequisites: JDK 25, update Intellij to the most recent version.
