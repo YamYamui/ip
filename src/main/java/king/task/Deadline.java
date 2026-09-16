@@ -24,6 +24,10 @@ public class Deadline extends Task {
         this.by = by;
     }
 
+    public String getBy() {
+        return by;
+    }
+
     /**
      * Returns the description of this task followed by its deadline,
      * e.g. {@code return book (by: June 6th)}.

@@ -2,9 +2,12 @@ package king;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Exercises King's command loop using scripted conversations without external libraries.
@@ -134,13 +137,31 @@ public class KingTest {
      * Runs a fresh chatbot session and restores the process streams afterward.
      */
     private static String runConversation(String input) {
+        try {
+            Path directory = Files.createTempDirectory("king-command-test-");
+            Path file = directory.resolve("king.txt");
+            try {
+                return runConversation(input, file);
+            } finally {
+                Files.deleteIfExists(file);
+                Files.delete(directory);
+            }
+        } catch (IOException exception) {
+            throw new AssertionError("Could not prepare isolated test storage", exception);
+        }
+    }
+
+    /**
+     * Runs a session against a specific save file for persistence tests.
+     */
+    static String runConversation(String input, Path file) {
         InputStream originalInput = System.in;
         PrintStream originalOutput = System.out;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (PrintStream capturedOutput = new PrintStream(output, true, StandardCharsets.UTF_8)) {
             System.setIn(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
             System.setOut(capturedOutput);
-            King.main(new String[0]);
+            King.run(file);
         } finally {
             System.setIn(originalInput);
             System.setOut(originalOutput);

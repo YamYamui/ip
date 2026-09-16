@@ -1,8 +1,12 @@
 package king;
 
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 import king.exception.KingException;
+import king.storage.Storage;
 import king.task.Deadline;
 import king.task.Event;
 import king.task.Task;
@@ -32,6 +36,14 @@ public class King {
      * Reports command errors without ending the conversation.
      */
     public static void main(String[] args) {
+        run(Path.of("data", "king.txt"));
+    }
+
+    /**
+     * Runs a session using the supplied save path, allowing tests to use isolated files.
+     * Stops on load failure to avoid overwriting data that could not be recovered.
+     */
+    public static void run(Path filePath) {
         String banner = "    __    _          \n"
                 + "   / /__ (_)__  ___ _\n"
                 + "  /  '_// / _ \\/ _ `/\n"
@@ -39,6 +51,20 @@ public class King {
                 + "              /___/\n";
         Task[] tasks = new Task[MAX_TASKS];
         int taskCount = 0;
+        Storage storage = new Storage(filePath);
+        try {
+            List<Task> loadedTasks = storage.load();
+            if (loadedTasks.size() > MAX_TASKS) {
+                throw new KingException("the save contains more than 100 tasks. The file has not been changed.");
+            }
+            taskCount = loadedTasks.size();
+            loadedTasks.toArray(tasks);
+        } catch (KingException exception) {
+            System.out.println(LINE);
+            System.out.println("    My subject, " + exception.getMessage());
+            System.out.println(LINE);
+            return;
+        }
 
         System.out.println(LINE);
         System.out.print(banner);
@@ -66,6 +92,7 @@ public class King {
                         printTasks(tasks, taskCount);
                     } else if (firstWord.equalsIgnoreCase("mark") || firstWord.equalsIgnoreCase("unmark")) {
                         updateTaskStatus(tasks, taskCount, arguments, firstWord.equalsIgnoreCase("mark"));
+                        storage.save(Arrays.asList(tasks).subList(0, taskCount));
                     } else {
                         Task task = parseTask(firstWord, arguments);
                         if (taskCount >= MAX_TASKS) {
@@ -74,6 +101,7 @@ public class King {
                         tasks[taskCount] = task;
                         taskCount++;
                         printAddedTask(task, taskCount);
+                        storage.save(Arrays.asList(tasks).subList(0, taskCount));
                     }
                 } catch (KingException exception) {
                     System.out.println("    My subject, " + exception.getMessage());
