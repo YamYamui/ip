@@ -4,10 +4,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -35,11 +33,10 @@ public class KingPersistenceTest {
             commands_noChanges_preserveFile(directory.resolve("unchanged.txt"));
             storage_missingParents_createsOnSave(directory.resolve("nested/data/king.txt"));
             storage_corruptRecords_preservesOriginal(directory.resolve("corrupt.txt"));
-            storage_invalidDeadline_preservesOriginal(directory.resolve("invalid-date.txt"));
             storage_readFailure_stopsSession(directory.resolve("not-a-file"));
             storage_saveFailure_reportsAndRetries(directory.resolve("blocked"));
             commands_largeSavedList_supportsDeletionAndStatus(directory.resolve("large.txt"));
-            System.out.println("All 9 persistence tests passed.");
+            System.out.println("All 8 persistence tests passed.");
         } finally {
             try (Stream<Path> paths = Files.walk(directory)) {
                 for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
@@ -51,7 +48,7 @@ public class KingPersistenceTest {
 
     private static void storage_allTaskTypes_roundTripWithoutLoss(Path file) throws Exception {
         Task todo = new ToDo("read | book\\notes\t\n\u4e66");
-        Task deadline = new Deadline("return book (by: literal)", "2024-02-29");
+        Task deadline = new Deadline("return book (by: literal)", "Friday | evening");
         Task event = new Event("meeting", "Monday\t2pm", "Tuesday\n4pm");
         deadline.markAsDone();
         event.markAsDone();
@@ -68,8 +65,6 @@ public class KingPersistenceTest {
                 check(expected.getDescription().equals(actual.getDescription()), "All fields must survive reload");
                 check(expected.isDone() == actual.isDone(), "Completion state must survive reload");
             }
-            check(((Deadline) actualTasks.get(1)).getBy().equals(LocalDate.of(2024, 2, 29)),
-                    "Deadline must remain a LocalDate through reload");
             storage.save(actualTasks);
         }
         storage.save(List.of());
@@ -77,13 +72,13 @@ public class KingPersistenceTest {
     }
 
     private static void commands_changes_saveBeforeExit(Path file) throws Exception {
-        KingTest.runConversation("todo read\ndeadline return /by 2019-10-15\nevent meet /from noon /to night\n", file);
+        KingTest.runConversation("todo read\ndeadline return /by Friday\nevent meet /from noon /to night\n", file);
         Storage storage = new Storage(file);
         check(storage.load().size() == 3, "Adds must save without bye");
         KingTest.runConversation("mark 2\n", file);
         check(storage.load().get(1).isDone(), "Mark must save before exit");
         String output = KingTest.runConversation("list\nunmark 2\n", file);
-        check(output.contains("2. [D][X] return (by: Oct 15 2019)"), "Startup must restore completed tasks");
+        check(output.contains("2. [D][X] return (by: Friday)"), "Startup must restore completed tasks");
         check(!storage.load().get(1).isDone(), "Unmark must save before exit");
         KingTest.runConversation("delete 2\n", file);
         List<Task> remainingTasks = storage.load();
@@ -127,17 +122,6 @@ public class KingPersistenceTest {
         }
         Files.write(file, new byte[] {(byte) 0xff});
         check(KingTest.runConversation("bye\n", file).contains("cannot read"), "Invalid file UTF-8 must be reported");
-    }
-
-    private static void storage_invalidDeadline_preservesOriginal(Path file) throws Exception {
-        for (String date : List.of("Friday", "2019-02-29", "Oct 15 2019")) {
-            String encodedDate = Base64.getEncoder().encodeToString(date.getBytes(StandardCharsets.UTF_8));
-            Files.writeString(file, "D|0|Ym9vaw==|" + encodedDate + "\n", StandardCharsets.UTF_8);
-            byte[] original = Files.readAllBytes(file);
-            String output = KingTest.runConversation("todo should not overwrite\nbye\n", file);
-            check(output.contains("invalid saved data at line 1"), "Invalid deadline must report a loading error");
-            check(Arrays.equals(original, Files.readAllBytes(file)), "Invalid deadline must preserve the save file");
-        }
     }
 
     private static void storage_readFailure_stopsSession(Path file) throws Exception {

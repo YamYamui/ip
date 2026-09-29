@@ -20,7 +20,6 @@ public class KingTest {
     public static void main(String[] args) {
         commands_invalidInput_recoversWithoutAddingTasks();
         deadline_invalidFields_rejectsTask();
-        deadline_dates_validatesAndFormats();
         event_invalidFields_rejectsTask();
         taskStatus_invalidIndex_preservesState();
         commands_validInput_preservesLevelFourBehavior();
@@ -29,7 +28,7 @@ public class KingTest {
         delete_invalidIndices_preservesTasks();
         input_endOfStream_exitsCleanly();
         bye_validCommand_stopsReading();
-        System.out.println("All 11 King regression tests passed.");
+        System.out.println("All 10 King regression tests passed.");
     }
 
     private static void commands_invalidInput_recoversWithoutAddingTasks() {
@@ -47,29 +46,15 @@ public class KingTest {
 
     private static void deadline_invalidFields_rejectsTask() {
         String[] commands = {
-            "deadline", "deadline return book", "deadline /by 2019-10-15",
-            "deadline return book /by", "deadline return book /by 2019-10-15 /by Saturday"
+            "deadline", "deadline return book", "deadline /by Friday",
+            "deadline return book /by", "deadline return book /by Friday /by Saturday"
         };
         String output = runConversation(String.join("\n", commands) + "\ntodo safe\nlist\nbye\n");
         assertOccurrences(output, "My subject,", commands.length);
         assertContains(output, "a deadline needs a description");
-        assertContains(output, "a deadline needs a date after /by");
+        assertContains(output, "a deadline needs a date/time after /by");
         assertOccurrences(output, "I've added this task", 1);
         assertContains(output, "1. [T][ ] safe");
-    }
-
-    private static void deadline_dates_validatesAndFormats() {
-        String[] invalidDates = {"Friday", "2019-02-29", "2024-02-30", "2024-13-01", "2024-00-01",
-            "2024-04-31", "15/10/2019", "2019-1-5", "2019-10-15 1800"};
-        StringBuilder commands = new StringBuilder();
-        for (String date : invalidDates) {
-            commands.append("deadline invalid /by ").append(date).append('\n');
-        }
-        commands.append("deadline leap day /by 2024-02-29\nlist\nbye\n");
-        String output = runConversation(commands.toString());
-        assertOccurrences(output, "a deadline needs a valid date in yyyy-MM-dd format", invalidDates.length);
-        assertOccurrences(output, "I've added this task", 1);
-        assertContains(output, "1. [D][ ] leap day (by: Feb 29 2024)");
     }
 
     private static void event_invalidFields_rejectsTask() {
@@ -110,13 +95,13 @@ public class KingTest {
 
     private static void commands_validInput_preservesLevelFourBehavior() {
         String output = runConversation("  TODO\tread a book  \n"
-                + "DeAdLiNe\treturn book\t/by\t2019-10-15\n"
+                + "DeAdLiNe\treturn book\t/by\tFriday evening\n"
                 + "EVENT meeting /from Monday 2pm /to Monday 4pm\n"
                 + "todo visit /bypass\nmark\t2\nlist\nunmark 2\nlist\nBYE\n");
         assertOccurrences(output, "My subject,", 0);
         assertContains(output, "1. [T][ ] read a book");
-        assertContains(output, "2. [D][X] return book (by: Oct 15 2019)");
-        assertContains(output, "2. [D][ ] return book (by: Oct 15 2019)");
+        assertContains(output, "2. [D][X] return book (by: Friday evening)");
+        assertContains(output, "2. [D][ ] return book (by: Friday evening)");
         assertContains(output, "3. [E][ ] meeting (from: Monday 2pm to: Monday 4pm)");
         assertContains(output, "4. [T][ ] visit /bypass");
         assertOccurrences(output, "I've added this task", 4);
@@ -127,7 +112,7 @@ public class KingTest {
         for (int i = 1; i <= 100; i++) {
             commands.append("todo task ").append(i).append('\n');
         }
-        commands.append("todo overflow\ndeadline overflow /by 2019-10-15\n"
+        commands.append("todo overflow\ndeadline overflow /by Friday\n"
                 + "event overflow /from Monday /to Tuesday\nblah\nmark 100\nlist\nbye\n");
         String output = runConversation(commands.toString());
         assertOccurrences(output, "I've added this task", 103);
@@ -138,12 +123,12 @@ public class KingTest {
     }
 
     private static void delete_validIndices_removesAndRenumbersTasks() {
-        String output = runConversation("todo first\ndeadline middle /by 2019-10-15\n"
+        String output = runConversation("todo first\ndeadline middle /by Friday\n"
                 + "event last /from noon /to night\nmark 2\ndelete 2\nlist\n"
                 + "delete 2\nDELETE\t1\nlist\ntodo new\nlist\nbye\n");
         assertOccurrences(output, "My subject,", 0);
         assertOccurrences(output, "I've removed this task", 3);
-        assertContains(output, "[D][X] middle (by: Oct 15 2019)");
+        assertContains(output, "[D][X] middle (by: Friday)");
         assertContains(output, "2. [E][ ] last (from: noon to: night)");
         assertContains(output, "Now you have 0 task(s)");
         assertContains(output, "1. [T][ ] new");

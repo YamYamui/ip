@@ -1,48 +1,45 @@
 package king.task;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Locale;
-
 /**
- * Represents a task due on a calendar date, displayed with an English month name.
+ * Represents a task with a deadline.
+ *
+ * <p>A Deadline is a task that must be completed by a specific date/time.
+ * The deadline is stored as a string and displayed in the format
+ * {@code [D][ ] <description> (by: <deadline>)}.
  */
 public class Deadline extends Task {
 
-    private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
-
-    private final LocalDate by;
+    /** The deadline for this task, stored as a string. */
+    private final String by;
 
     /**
-     * Creates an incomplete task with a deadline parsed from an ISO date.
+     * Creates a new Deadline task with the given description and deadline,
+     * initially marked as not done.
      *
-     * @param description The text of the task.
-     * @param by The deadline in yyyy-MM-dd format.
-     * @throws IllegalArgumentException If the deadline is not a valid ISO date.
+     * @param description the text of the task.
+     * @param by the deadline date/time as a string.
      */
     public Deadline(String description, String by) {
         super(description);
-        try {
-            this.by = LocalDate.parse(by);
-        } catch (DateTimeParseException exception) {
-            throw new IllegalArgumentException(
-                    "a deadline needs a valid date in yyyy-MM-dd format, for example: 2019-10-15.", exception);
-        }
+        this.by = by;
     }
 
-    public LocalDate getBy() {
+    public String getBy() {
         return by;
     }
 
     /**
-     * Returns the task description with a formatted deadline, e.g. Oct 15 2019.
+     * Returns the description of this task followed by its deadline,
+     * e.g. {@code return book (by: June 6th)}.
      */
     @Override
     public String getDescription() {
-        return super.getDescription() + " (by: " + by.format(DISPLAY_FORMAT) + ")";
+        return super.getDescription() + " (by: " + by + ")";
     }
 
+    /**
+     * Returns the type icon of a deadline task.
+     */
     @Override
     public String getTaskType() {
         return "D";
