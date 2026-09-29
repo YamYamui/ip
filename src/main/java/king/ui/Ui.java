@@ -85,6 +85,19 @@ public class Ui implements AutoCloseable {
     }
 
     /**
+     * Displays matching tasks numbered from one, or an explanation when no tasks match.
+     */
+    public void showMatchingTasks(List<Task> matchingTasks) {
+        System.out.println("    Here are the matching tasks in your list:");
+        if (matchingTasks.isEmpty()) {
+            System.out.println("    No matching tasks found.");
+        }
+        for (int i = 0; i < matchingTasks.size(); i++) {
+            printTask(i + 1, matchingTasks.get(i));
+        }
+    }
+
+    /**
      * Prints a task with its type, done state, and description.
      * Includes a list number only when the index is positive.
      */

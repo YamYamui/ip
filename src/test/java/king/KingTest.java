@@ -29,7 +29,11 @@ public class KingTest {
         delete_invalidIndices_preservesTasks();
         input_endOfStream_exitsCleanly();
         bye_validCommand_stopsReading();
-        System.out.println("All 11 King regression tests passed.");
+        find_matchingDescriptions_returnsOnlyMatches();
+        find_noMatches_reportsEmptyResults();
+        find_missingKeyword_recovers();
+        find_phrase_preservesListOrderAndState();
+        System.out.println("All 15 King regression tests passed.");
     }
 
     private static void commands_invalidInput_recoversWithoutAddingTasks() {
@@ -167,6 +171,47 @@ public class KingTest {
         String output = runConversation("bye\ntodo ignored\n");
         assertContains(output, "Bye. Hope to see you again soon!");
         assertOccurrences(output, "I've added this task", 0);
+    }
+
+    private static void find_matchingDescriptions_returnsOnlyMatches() {
+        String output = runConversation("todo unrelated\ntodo read book\n"
+                + "deadline return book /by 2019-10-15\nevent book club /from noon /to night\n"
+                + "todo notebook\ntodo Book\nmark 2\n  FIND\tbook  \nbye\n");
+        String results = output.substring(output.indexOf("Here are the matching tasks in your list:"));
+        assertContains(results, "1. [T][X] read book");
+        assertContains(results, "2. [D][ ] return book (by: Oct 15 2019)");
+        assertContains(results, "3. [E][ ] book club (from: noon to: night)");
+        assertContains(results, "4. [T][ ] notebook");
+        assertOccurrences(results, "unrelated", 0);
+        assertOccurrences(results, "Book", 0);
+        assertOccurrences(results, "5. [", 0);
+    }
+
+    private static void find_noMatches_reportsEmptyResults() {
+        assertContains(runConversation("find book\nbye\n"), "No matching tasks found.");
+        String output = runConversation("deadline return /by 2019-10-15\n"
+                + "event meeting /from noon /to night\nfind Oct\nfind noon\nfind absent\nbye\n");
+        assertOccurrences(output, "No matching tasks found.", 3);
+        assertOccurrences(output, "My subject,", 0);
+    }
+
+    private static void find_missingKeyword_recovers() {
+        String output = runConversation("find\nfind   \ntodo book\nfind book\nbye\n");
+        assertOccurrences(output, "please supply a search keyword. Try: find book", 2);
+        assertContains(output, "1. [T][ ] book");
+    }
+
+    private static void find_phrase_preservesListOrderAndState() {
+        String output = runConversation("todo first\ntodo read book\ntodo book read\n"
+                + "mark 2\nfind read book\nlist\nbye\n");
+        String results = output.substring(output.indexOf("Here are the matching tasks in your list:"),
+                output.indexOf("Here are the tasks in your list:"));
+        assertContains(results, "1. [T][X] read book");
+        assertOccurrences(results, "book read", 0);
+        assertOccurrences(results, "first", 0);
+        assertContains(output, "1. [T][ ] first");
+        assertContains(output, "2. [T][X] read book");
+        assertContains(output, "3. [T][ ] book read");
     }
 
     /**
