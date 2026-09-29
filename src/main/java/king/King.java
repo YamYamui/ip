@@ -3,7 +3,6 @@ package king;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 import king.exception.KingException;
 import king.storage.Storage;
@@ -11,6 +10,7 @@ import king.task.Deadline;
 import king.task.Event;
 import king.task.Task;
 import king.task.ToDo;
+import king.ui.Ui;
 
 /**
  * Runs the King chatbot, which stores todos, deadlines, and events.
@@ -18,9 +18,6 @@ import king.task.ToDo;
  * display an explanation and leave the task list unchanged.
  */
 public class King {
-
-    /** Line of underscores used to frame the chatbot's messages. */
-    private static final String LINE = "____________________________________________________________\n";
 
     /** Expected syntax for a deadline command. */
     private static final String USAGE_DEADLINE = "deadline <description> /by <date/time>";
@@ -41,62 +38,53 @@ public class King {
      * Stops on load failure to avoid overwriting data that could not be recovered.
      */
     public static void run(Path filePath) {
-        String banner = "    __    _          \n"
-                + "   / /__ (_)__  ___ _\n"
-                + "  /  '_// / _ \\/ _ `/\n"
-                + " /_/\\_\\/_/_//_/\\_, / \n"
-                + "              /___/\n";
-        List<Task> tasks;
-        Storage storage = new Storage(filePath);
-        try {
-            tasks = new ArrayList<>(storage.load());
-        } catch (KingException exception) {
-            System.out.println(LINE);
-            System.out.println("    My subject, " + exception.getMessage());
-            System.out.println(LINE);
-            return;
-        }
+        try (Ui ui = new Ui()) {
+            List<Task> tasks;
+            Storage storage = new Storage(filePath);
+            try {
+                tasks = new ArrayList<>(storage.load());
+            } catch (KingException exception) {
+                ui.showLine();
+                ui.showError(exception.getMessage());
+                ui.showLine();
+                return;
+            }
 
-        System.out.println(LINE);
-        System.out.print(banner);
-        System.out.println("Hello, my subject. I am King, your faithful chatbot.");
-        System.out.println("What can I do for you?");
-        System.out.println(LINE);
+            ui.showWelcome();
 
-        try (Scanner console = new Scanner(System.in)) {
-            while (console.hasNextLine()) {
-                String command = console.nextLine().trim();
+            while (ui.hasNextCommand()) {
+                String command = ui.readCommand().trim();
                 String[] parts = command.split("\\s+", 2);
                 String firstWord = parts[0];
                 String arguments = parts.length > 1 ? parts[1].trim() : "";
-                System.out.println(LINE);
+                ui.showLine();
 
                 try {
                     requireText(command, "please enter a command, such as todo read a book or list.");
                     if (firstWord.equalsIgnoreCase("bye")) {
                         requireNoArguments(arguments, "bye");
-                        System.out.println("    Bye. Hope to see you again soon!");
-                        System.out.println(LINE);
+                        ui.showGoodbye();
+                        ui.showLine();
                         break;
                     } else if (firstWord.equalsIgnoreCase("list")) {
                         requireNoArguments(arguments, "list");
-                        printTasks(tasks);
+                        ui.showTasks(tasks);
                     } else if (firstWord.equalsIgnoreCase("mark") || firstWord.equalsIgnoreCase("unmark")) {
-                        updateTaskStatus(tasks, arguments, firstWord.equalsIgnoreCase("mark"));
+                        ui.showStatusChanged(updateTaskStatus(tasks, arguments, firstWord.equalsIgnoreCase("mark")));
                         storage.save(tasks);
                     } else if (firstWord.equalsIgnoreCase("delete")) {
-                        deleteTask(tasks, arguments);
+                        ui.showDeletedTask(deleteTask(tasks, arguments), tasks.size());
                         storage.save(tasks);
                     } else {
                         Task task = parseTask(firstWord, arguments);
                         tasks.add(task);
-                        printAddedTask(task, tasks.size());
+                        ui.showAddedTask(task, tasks.size());
                         storage.save(tasks);
                     }
                 } catch (KingException exception) {
-                    System.out.println("    My subject, " + exception.getMessage());
+                    ui.showError(exception.getMessage());
                 }
-                System.out.println(LINE);
+                ui.showLine();
             }
         }
     }
@@ -168,27 +156,6 @@ public class King {
     }
 
     /**
-     * Prints all stored tasks as a numbered list.
-     */
-    private static void printTasks(List<Task> tasks) {
-        System.out.println("    Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            printTask(i + 1, tasks.get(i));
-        }
-    }
-
-    /**
-     * Prints a task with its type, done state, and description.
-     * Includes a list number only when the index is positive.
-     */
-    private static void printTask(int index, Task task) {
-        if (index > 0) {
-            System.out.printf("    %d. ", index);
-        }
-        System.out.printf("[%s][%s] %s%n", task.getTaskType(), task.getStatusIcon(), task.getDescription());
-    }
-
-    /**
      * Returns the zero-based index of an existing task from a user-supplied number.
      *
      * @throws KingException If the number is missing, nonnumeric, or out of range.
@@ -212,43 +179,27 @@ public class King {
     }
 
     /**
-     * Updates an existing task's completion status and prints a confirmation.
+     * Updates an existing task's completion status and returns the task.
      *
      * @throws KingException If the task number is invalid.
      */
-    private static void updateTaskStatus(List<Task> tasks, String indexText, boolean isDone) throws KingException {
+    private static Task updateTaskStatus(List<Task> tasks, String indexText, boolean isDone) throws KingException {
         Task task = tasks.get(parseTaskIndex(indexText, tasks.size()));
         if (isDone) {
             task.markAsDone();
-            System.out.println("    Nice! I've marked this task as done:");
         } else {
             task.markAsNotDone();
-            System.out.println("    OK, I've marked this task as not done yet:");
         }
-        System.out.print("      ");
-        printTask(0, task);
+        return task;
     }
 
     /**
-     * Removes an existing task, closes the gap in the list, and reports the new count.
+     * Removes and returns an existing task, closing the gap in the list.
      *
      * @throws KingException If the task number is invalid.
      */
-    private static void deleteTask(List<Task> tasks, String indexText) throws KingException {
-        Task removedTask = tasks.remove(parseTaskIndex(indexText, tasks.size()));
-        System.out.println("    By your command, I've removed this task:");
-        System.out.print("      ");
-        printTask(0, removedTask);
-        System.out.println("    Now you have " + tasks.size() + " task(s) in the list.");
+    private static Task deleteTask(List<Task> tasks, String indexText) throws KingException {
+        return tasks.remove(parseTaskIndex(indexText, tasks.size()));
     }
 
-    /**
-     * Prints an added task and the updated task count.
-     */
-    private static void printAddedTask(Task task, int taskCount) {
-        System.out.println("    Got it. I've added this task:");
-        System.out.print("      ");
-        printTask(0, task);
-        System.out.println("    Now you have " + taskCount + " task(s) in the list.");
-    }
 }
