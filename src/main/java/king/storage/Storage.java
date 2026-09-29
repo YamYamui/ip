@@ -108,7 +108,7 @@ public class Storage {
         String record = task.getTaskType() + "|" + (task.isDone() ? "1" : "0")
                 + "|" + encode(task.getRawDescription());
         if (task instanceof Deadline deadline) {
-            return record + "|" + encode(deadline.getBy());
+            return record + "|" + encode(deadline.getBy().toString());
         } else if (task instanceof Event event) {
             return record + "|" + encode(event.getFrom()) + "|" + encode(event.getTo());
         }

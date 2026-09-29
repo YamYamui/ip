@@ -20,7 +20,7 @@ import king.ui.Ui;
 public class King {
 
     /** Expected syntax for a deadline command. */
-    private static final String USAGE_DEADLINE = "deadline <description> /by <date/time>";
+    private static final String USAGE_DEADLINE = "deadline <description> /by <yyyy-MM-dd>";
 
     /** Expected syntax for an event command. */
     private static final String USAGE_EVENT = "event <description> /from <start> /to <end>";
@@ -101,8 +101,12 @@ public class King {
         } else if (command.equalsIgnoreCase("deadline")) {
             String[] parts = splitClause(arguments, "/by", USAGE_DEADLINE);
             requireText(parts[0], "a deadline needs a description. Try: " + USAGE_DEADLINE);
-            requireText(parts[1], "a deadline needs a date/time after /by. Try: " + USAGE_DEADLINE);
-            return new Deadline(parts[0], parts[1]);
+            requireText(parts[1], "a deadline needs a date after /by. Try: " + USAGE_DEADLINE);
+            try {
+                return new Deadline(parts[0], parts[1]);
+            } catch (IllegalArgumentException exception) {
+                throw new KingException(exception.getMessage());
+            }
         } else if (command.equalsIgnoreCase("event")) {
             String[] parts = splitClause(arguments, "/from", USAGE_EVENT);
             // Check the entire command for duplicate /to markers before parsing the times.
