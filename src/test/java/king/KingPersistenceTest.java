@@ -99,7 +99,7 @@ public class KingPersistenceTest {
         byte[] original = Files.readAllBytes(file);
         Files.setLastModifiedTime(file, FileTime.fromMillis(1000000000000L));
         FileTime originalTime = Files.getLastModifiedTime(file);
-        KingTest.runConversation("list\ntodo\nblah\nmark 9\ndelete 9\nbye\n", file);
+        KingTest.runConversation("list\nfind safe\nfind absent\nfind\ntodo\nblah\nmark 9\ndelete 9\nbye\n", file);
         check(Arrays.equals(original, Files.readAllBytes(file)), "Rejected commands must preserve saved content");
         check(originalTime.equals(Files.getLastModifiedTime(file)), "Read-only commands must not rewrite the file");
     }

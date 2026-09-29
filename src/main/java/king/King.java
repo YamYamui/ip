@@ -14,7 +14,7 @@ import king.ui.Ui;
 
 /**
  * Runs the King chatbot, which stores todos, deadlines, and events.
- * Commands can list tasks and change their completion status. Invalid commands
+ * Commands can list or find tasks and change their completion status. Invalid commands
  * display an explanation and leave the task list unchanged.
  */
 public class King {
@@ -69,6 +69,8 @@ public class King {
                     } else if (firstWord.equalsIgnoreCase("list")) {
                         requireNoArguments(arguments, "list");
                         ui.showTasks(tasks);
+                    } else if (firstWord.equalsIgnoreCase("find")) {
+                        ui.showMatchingTasks(findTasks(tasks, arguments));
                     } else if (firstWord.equalsIgnoreCase("mark") || firstWord.equalsIgnoreCase("unmark")) {
                         ui.showStatusChanged(updateTaskStatus(tasks, arguments, firstWord.equalsIgnoreCase("mark")));
                         storage.save(tasks);
@@ -87,6 +89,23 @@ public class King {
                 ui.showLine();
             }
         }
+    }
+
+    /**
+     * Returns tasks whose raw descriptions contain the case-sensitive search text, in list order.
+     * Leaves the original list unchanged and excludes displayed dates and status icons from the search.
+     *
+     * @throws KingException If no search text is supplied.
+     */
+    private static List<Task> findTasks(List<Task> tasks, String keyword) throws KingException {
+        requireText(keyword, "please supply a search keyword. Try: find book");
+        List<Task> matchingTasks = new ArrayList<>();
+        for (Task task : tasks) {
+            if (task.getRawDescription().contains(keyword)) {
+                matchingTasks.add(task);
+            }
+        }
+        return matchingTasks;
     }
 
     /**
@@ -118,7 +137,7 @@ public class King {
             return new Event(parts[0], times[0], times[1]);
         }
         throw new KingException("I do not recognize '" + command
-                + "'. Use todo, deadline, event, list, mark, unmark, delete, or bye.");
+                + "'. Use todo, deadline, event, list, find, mark, unmark, delete, or bye.");
     }
 
     /**
