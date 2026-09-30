@@ -38,6 +38,7 @@ public class Storage {
     /**
      * Returns all saved tasks, or an empty list when the file or its parent folder does not exist.
      *
+     * @return Loaded tasks, or an empty list if the file does not exist.
      * @throws KingException If the file cannot be read or any record is malformed.
      */
     public List<Task> load() throws KingException {
@@ -65,6 +66,7 @@ public class Storage {
     /**
      * Saves a complete snapshot, creating parent directories on first use.
      *
+     * @param tasks Tasks to persist, in list order.
      * @throws KingException If the snapshot cannot be written or installed at the destination.
      */
     public void save(List<Task> tasks) throws KingException {
@@ -103,6 +105,9 @@ public class Storage {
 
     /**
      * Returns a record containing type, completion status, and encoded task fields.
+     *
+     * @param task Task to display or serialize.
+     * @return Task record with encoded fields.
      */
     private static String formatRecord(Task task) {
         String record = task.getTaskType() + "|" + (task.isDone() ? "1" : "0")
@@ -118,6 +123,8 @@ public class Storage {
     /**
      * Returns a task from a validated record, preserving its completion state.
      *
+     * @param record Serialized task record to validate and decode.
+     * @return Reconstructed task.
      * @throws IllegalArgumentException If the type, status, field count, or text encoding is invalid.
      */
     private static Task parseRecord(String record) {
@@ -142,12 +149,21 @@ public class Storage {
         return task;
     }
 
+    /**
+     * Encodes text as Base64 using UTF-8 so record separators remain unambiguous.
+     *
+     * @param text Text to process.
+     * @return Base64 representation of the UTF-8 text.
+     */
     private static String encode(String text) {
         return Base64.getEncoder().encodeToString(text.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
      * Returns nonblank text decoded from Base64 and strictly validated UTF-8.
+     *
+     * @param text Text to process.
+     * @return Decoded nonblank text.
      */
     private static String decode(String text) {
         try {

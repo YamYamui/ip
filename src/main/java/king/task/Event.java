@@ -29,10 +29,20 @@ public class Event extends Task {
         this.to = to;
     }
 
+    /**
+     * Returns the original start date or time text for this event.
+     *
+     * @return Original start text.
+     */
     public String getFrom() {
         return from;
     }
 
+    /**
+     * Returns the original end date or time text for this event.
+     *
+     * @return Original end text.
+     */
     public String getTo() {
         return to;
     }
@@ -40,6 +50,8 @@ public class Event extends Task {
     /**
      * Returns the description of this event followed by its time range,
      * e.g. {@code project meeting (from: Aug 6th 2pm to: 4pm)}.
+     *
+     * @return Description formatted for display.
      */
     @Override
     public String getDescription() {
@@ -48,6 +60,8 @@ public class Event extends Task {
 
     /**
      * Returns the type icon of an event task.
+     *
+     * @return Task type icon.
      */
     @Override
     public String getTaskType() {

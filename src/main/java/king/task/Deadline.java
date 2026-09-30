@@ -31,18 +31,30 @@ public class Deadline extends Task {
         }
     }
 
+    /**
+     * Returns the calendar date on which this task is due.
+     *
+     * @return Immutable deadline date.
+     */
     public LocalDate getBy() {
         return by;
     }
 
     /**
      * Returns the task description with a formatted deadline, e.g. Oct 15 2019.
+     *
+     * @return Description formatted for display.
      */
     @Override
     public String getDescription() {
         return super.getDescription() + " (by: " + by.format(DISPLAY_FORMAT) + ")";
     }
 
+    /**
+     * Returns the single-character icon identifying this task type.
+     *
+     * @return Task type icon.
+     */
     @Override
     public String getTaskType() {
         return "D";
