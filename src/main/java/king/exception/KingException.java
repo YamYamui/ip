@@ -1,7 +1,7 @@
 package king.exception;
 
 /**
- * Represents an invalid King command that can be corrected by the user.
+ * Represents a command or storage failure with an explanation suitable for the user.
  * The message explains the problem and how to continue the conversation.
  */
 public class KingException extends Exception {

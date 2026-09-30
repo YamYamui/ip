@@ -25,6 +25,8 @@ public class Ui implements AutoCloseable {
 
     /**
      * Returns whether another command is available, allowing clean exit at end of input.
+     *
+     * @return Whether another input line is available.
      */
     public boolean hasNextCommand() {
         return console.hasNextLine();
@@ -32,6 +34,8 @@ public class Ui implements AutoCloseable {
 
     /**
      * Returns the next input line; command interpretation belongs to the caller.
+     *
+     * @return Next input line without its line terminator.
      */
     public String readCommand() {
         return console.nextLine();
@@ -62,6 +66,8 @@ public class Ui implements AutoCloseable {
 
     /**
      * Displays an error with the chatbot's customary address.
+     *
+     * @param message Explanation to display or include in a failure.
      */
     public void showError(String message) {
         System.out.println("    My subject, " + message);
@@ -76,6 +82,8 @@ public class Ui implements AutoCloseable {
 
     /**
      * Prints all stored tasks as a numbered list.
+     *
+     * @param tasks Tasks to display, in list order.
      */
     public void showTasks(List<Task> tasks) {
         System.out.println("    Here are the tasks in your list:");
@@ -86,6 +94,8 @@ public class Ui implements AutoCloseable {
 
     /**
      * Displays matching tasks numbered from one, or an explanation when no tasks match.
+     *
+     * @param matchingTasks Matching tasks in their original order.
      */
     public void showMatchingTasks(List<Task> matchingTasks) {
         System.out.println("    Here are the matching tasks in your list:");
@@ -100,6 +110,9 @@ public class Ui implements AutoCloseable {
     /**
      * Prints a task with its type, done state, and description.
      * Includes a list number only when the index is positive.
+     *
+     * @param index Display number, or zero to omit numbering.
+     * @param task Task to display or serialize.
      */
     private void printTask(int index, Task task) {
         if (index > 0) {
@@ -110,6 +123,9 @@ public class Ui implements AutoCloseable {
 
     /**
      * Prints an added task and the updated task count.
+     *
+     * @param task Task to display or serialize.
+     * @param taskCount Number of tasks in the list.
      */
     public void showAddedTask(Task task, int taskCount) {
         System.out.println("    Got it. I've added this task:");
@@ -120,6 +136,8 @@ public class Ui implements AutoCloseable {
 
     /**
      * Displays a confirmation of the task's current completion state.
+     *
+     * @param task Task to display or serialize.
      */
     public void showStatusChanged(Task task) {
         if (task.isDone()) {
@@ -133,6 +151,9 @@ public class Ui implements AutoCloseable {
 
     /**
      * Displays a removed task and the remaining task count.
+     *
+     * @param task Task to display or serialize.
+     * @param taskCount Number of tasks in the list.
      */
     public void showDeletedTask(Task task, int taskCount) {
         System.out.println("    By your command, I've removed this task:");

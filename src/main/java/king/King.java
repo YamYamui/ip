@@ -28,6 +28,8 @@ public class King {
     /**
      * Reads commands until the user enters {@code bye} or input ends.
      * Reports command errors without ending the conversation.
+     *
+     * @param args Command-line arguments; not used.
      */
     public static void main(String[] args) {
         run(Path.of("data", "king.txt"));
@@ -36,6 +38,8 @@ public class King {
     /**
      * Runs a session using the supplied save path, allowing tests to use isolated files.
      * Stops on load failure to avoid overwriting data that could not be recovered.
+     *
+     * @param filePath Path to the task save file.
      */
     public static void run(Path filePath) {
         try (Ui ui = new Ui()) {
@@ -95,6 +99,9 @@ public class King {
      * Returns tasks whose raw descriptions contain the case-sensitive search text, in list order.
      * Leaves the original list unchanged and excludes displayed dates and status icons from the search.
      *
+     * @param tasks Tasks to inspect or update, in list order.
+     * @param keyword Case-sensitive search text.
+     * @return New list containing matching task references.
      * @throws KingException If no search text is supplied.
      */
     private static List<Task> findTasks(List<Task> tasks, String keyword) throws KingException {
@@ -111,6 +118,9 @@ public class King {
     /**
      * Returns a task parsed from an add command without changing the task list.
      *
+     * @param command Command name or text to validate.
+     * @param arguments Text following the command name.
+     * @return New incomplete task.
      * @throws KingException If the command is unknown or its fields are invalid.
      */
     private static Task parseTask(String command, String arguments) throws KingException {
@@ -144,6 +154,10 @@ public class King {
      * Splits text at exactly one standalone clause marker and trims both fields.
      * Preserves empty fields so callers can explain which value is missing.
      *
+     * @param text Text to process.
+     * @param marker Standalone clause marker to locate.
+     * @param usage Syntax to include in errors.
+     * @return Two trimmed fields, which may be empty.
      * @throws KingException If the marker is missing or repeated.
      */
     private static String[] splitClause(String text, String marker, String usage) throws KingException {
@@ -159,6 +173,8 @@ public class King {
     /**
      * Rejects an empty command or field with an explanation for the user.
      *
+     * @param text Text to process.
+     * @param message Explanation to display or include in a failure.
      * @throws KingException If the text is empty.
      */
     private static void requireText(String text, String message) throws KingException {
@@ -170,6 +186,8 @@ public class King {
     /**
      * Rejects extra arguments for commands that take none.
      *
+     * @param arguments Text following the command name.
+     * @param command Command name or text to validate.
      * @throws KingException If arguments were supplied.
      */
     private static void requireNoArguments(String arguments, String command) throws KingException {
@@ -181,6 +199,9 @@ public class King {
     /**
      * Returns the zero-based index of an existing task from a user-supplied number.
      *
+     * @param indexText One-based task number supplied by the user.
+     * @param taskCount Number of tasks in the list.
+     * @return Zero-based task index.
      * @throws KingException If the number is missing, nonnumeric, or out of range.
      */
     private static int parseTaskIndex(String indexText, int taskCount) throws KingException {
@@ -204,6 +225,10 @@ public class King {
     /**
      * Updates an existing task's completion status and returns the task.
      *
+     * @param tasks Tasks to inspect or update, in list order.
+     * @param indexText One-based task number supplied by the user.
+     * @param isDone Whether to mark the task complete.
+     * @return Task whose completion state was updated.
      * @throws KingException If the task number is invalid.
      */
     private static Task updateTaskStatus(List<Task> tasks, String indexText, boolean isDone) throws KingException {
@@ -219,6 +244,9 @@ public class King {
     /**
      * Removes and returns an existing task, closing the gap in the list.
      *
+     * @param tasks Tasks to inspect or update, in list order.
+     * @param indexText One-based task number supplied by the user.
+     * @return Removed task.
      * @throws KingException If the task number is invalid.
      */
     private static Task deleteTask(List<Task> tasks, String indexText) throws KingException {

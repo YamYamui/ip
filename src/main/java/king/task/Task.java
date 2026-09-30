@@ -43,6 +43,8 @@ public class Task {
     /**
      * Returns a single-character icon representing the done state:
      * {@code "X"} for done, {@code " "} for not done.
+     *
+     * @return Completion status icon.
      */
     public String getStatusIcon() {
         return (isDone ? "X" : " "); // mark done task with X
@@ -50,6 +52,8 @@ public class Task {
 
     /**
      * Returns the description of this task.
+     *
+     * @return Description formatted for display.
      */
     public String getDescription() {
         return description;
@@ -57,11 +61,18 @@ public class Task {
 
     /**
      * Returns the original description without display-only date or time suffixes.
+     *
+     * @return Original description without display suffixes.
      */
     public String getRawDescription() {
         return description;
     }
 
+    /**
+     * Returns whether this task has been completed.
+     *
+     * @return Whether the task is complete.
+     */
     public boolean isDone() {
         return isDone;
     }

@@ -26,6 +26,9 @@ public class KingPersistenceTest {
 
     /**
      * Runs persistence checks and removes only the temporary files created by this suite.
+     *
+     * @param args Command-line arguments; not used.
+     * @throws Exception If test setup, storage access, or cleanup fails.
      */
     public static void main(String[] args) throws Exception {
         Path directory = Files.createTempDirectory("king-persistence-test-");
@@ -49,6 +52,12 @@ public class KingPersistenceTest {
         }
     }
 
+    /**
+     * Verifies repeated persistence of task fields, dates, and completion states.
+     *
+     * @param file Isolated save path used by the test or conversation.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void storage_allTaskTypes_roundTripWithoutLoss(Path file) throws Exception {
         Task todo = new ToDo("read | book\\notes\t\n\u4e66");
         Task deadline = new Deadline("return book (by: literal)", "2024-02-29");
@@ -76,6 +85,12 @@ public class KingPersistenceTest {
         check(storage.load().isEmpty(), "An empty snapshot must replace previous tasks");
     }
 
+    /**
+     * Verifies immediate persistence and restoration in a later session.
+     *
+     * @param file Isolated save path used by the test or conversation.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void commands_changes_saveBeforeExit(Path file) throws Exception {
         KingTest.runConversation("todo read\ndeadline return /by 2019-10-15\nevent meet /from noon /to night\n", file);
         Storage storage = new Storage(file);
@@ -94,6 +109,12 @@ public class KingPersistenceTest {
         check(!KingTest.runConversation("list\nbye\n", file).contains("1. ["), "Deleted tasks must not reappear");
     }
 
+    /**
+     * Verifies preservation of file contents and timestamps by read-only and rejected commands.
+     *
+     * @param file Isolated save path used by the test or conversation.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void commands_noChanges_preserveFile(Path file) throws Exception {
         new Storage(file).save(List.of(new ToDo("safe")));
         byte[] original = Files.readAllBytes(file);
@@ -104,6 +125,12 @@ public class KingPersistenceTest {
         check(originalTime.equals(Files.getLastModifiedTime(file)), "Read-only commands must not rewrite the file");
     }
 
+    /**
+     * Verifies that missing storage directories are created only when saving.
+     *
+     * @param file Isolated save path used by the test or conversation.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void storage_missingParents_createsOnSave(Path file) throws Exception {
         check(new Storage(file).load().isEmpty(), "Missing folders must load as an empty list");
         KingTest.runConversation("list\nbye\n", file);
@@ -112,6 +139,12 @@ public class KingPersistenceTest {
         check(new Storage(file).load().size() == 1, "First change must create folders and save");
     }
 
+    /**
+     * Verifies that malformed records stop loading without overwriting the file.
+     *
+     * @param file Isolated save path used by the test or conversation.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void storage_corruptRecords_preservesOriginal(Path file) throws Exception {
         String[] invalidRecords = {
             "garbage", "X|0|eA==", "T|2|eA==", "T|0|", "T|0|%%%", "T|0|/w==",
@@ -129,6 +162,12 @@ public class KingPersistenceTest {
         check(KingTest.runConversation("bye\n", file).contains("cannot read"), "Invalid file UTF-8 must be reported");
     }
 
+    /**
+     * Verifies rejection of invalid deadline text without changing the save file.
+     *
+     * @param file Isolated save path used by the test or conversation.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void storage_invalidDeadline_preservesOriginal(Path file) throws Exception {
         for (String date : List.of("Friday", "2019-02-29", "Oct 15 2019")) {
             String encodedDate = Base64.getEncoder().encodeToString(date.getBytes(StandardCharsets.UTF_8));
@@ -140,6 +179,12 @@ public class KingPersistenceTest {
         }
     }
 
+    /**
+     * Verifies that an unreadable save path stops the session and preserves data.
+     *
+     * @param file Isolated save path used by the test or conversation.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void storage_readFailure_stopsSession(Path file) throws Exception {
         Files.createDirectory(file);
         Path sentinel = file.resolve("keep.txt");
@@ -149,6 +194,12 @@ public class KingPersistenceTest {
         check(Files.readString(sentinel).equals("keep"), "Read failure must preserve existing data");
     }
 
+    /**
+     * Verifies save failure reporting and retry after repairing the destination.
+     *
+     * @param blocker Temporary path used to simulate an unwritable destination.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void storage_saveFailure_reportsAndRetries(Path blocker) throws Exception {
         Files.writeString(blocker, "keep");
         Storage storage = new Storage(blocker.resolve("king.txt"));
@@ -164,6 +215,12 @@ public class KingPersistenceTest {
         check(storage.load().getFirst().getRawDescription().equals("retry"), "Saving must recover after repair");
     }
 
+    /**
+     * Verifies loading, deletion, and completion changes with over one hundred tasks.
+     *
+     * @param file Isolated save path used by the test or conversation.
+     * @throws Exception If test setup, storage access, or cleanup fails.
+     */
     private static void commands_largeSavedList_supportsDeletionAndStatus(Path file) throws Exception {
         List<Task> tasks = new ArrayList<>();
         for (int i = 1; i <= 105; i++) {
@@ -179,6 +236,12 @@ public class KingPersistenceTest {
         check(restoredTasks.getLast().isDone(), "Status changes must use the renumbered indices");
     }
 
+    /**
+     * Fails the test with an explanation when the supplied condition is false.
+     *
+     * @param isSatisfied Condition required to pass.
+     * @param message Explanation to display or include in a failure.
+     */
     private static void check(boolean isSatisfied, String message) {
         if (!isSatisfied) {
             throw new AssertionError(message);
